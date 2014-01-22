@@ -16,6 +16,10 @@ defmodule Election do
     has_many :vote, Vote
   end
 
+  def score(elec) do
+    Enum.map(DbTest.all(elec.vote), &(&1.ranks)) |> Enum.map(fn(x)->Score.count(x) end) |> Score.sum
+  end
+
   def schulze(ranks) do
     [line, mat] = ranks
   end

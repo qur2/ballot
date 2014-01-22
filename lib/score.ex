@@ -11,7 +11,7 @@ defmodule Score do
 	def count(arr) do
 		_count(arr, length(arr), 0, [])
 	end
-	defp _count(arr, n, i, counts) when n == i do
+	defp _count(_, n, i, counts) when n == i do
 		counts
 	end
 	defp _count(arr, n, i, counts) when n > i do
@@ -23,8 +23,12 @@ defmodule Score do
 		c = [0] ++ Enum.map(t, fn(x) -> if h < x do 1 else 0 end end)
 		# Recursively call the function on the tail to which we append the head
 		# in order to simulate a circular list.
-		# Result needs to be shifted occordingly.
-		_count(t ++ [h], n, i+1, counts ++ [Enum.slice(c, n-i..n) ++ Enum.slice(c, 0, n-i)])
+		# Result needs to be shifted accordingly.
+		_count(t ++ [h], n, i+1, counts ++ [rotate(c, n-i)])
+	end
+	def rotate(arr, pivot) do
+		{h, t} = Enum.split(arr, pivot)
+		t ++ h
 	end
 
 	@doc """
