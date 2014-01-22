@@ -35,7 +35,7 @@ defmodule Score do
 		a + b
 	end
 	def add(a, b) when is_list(a) and is_list(b) do
-		# When add 2 lists, add them pair by pair
+		# When add 2 lists, add their elementss pair by pair
 		Enum.zip(a, b) |> Enum.map(fn {a, b} -> add(a, b) end)
 	end
 
