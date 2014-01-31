@@ -41,43 +41,22 @@ defmodule Score do
 	end
 
 	@doc """
-	Given a ranking, returns a comparison triangle matrix where every element
-	is compared to every other.
+	Given a ranking, returns a comparison triangle matrix where every
+	element is compared to every other.
 	"""
 	def pairs(ranks) do
 		len = length ranks
-		graph = 1..(len*2) |> Enum.map(fn(_) -> 0 end)
-		_pairs(ranks, len, 0, graph)
-		# |> Enum.map(fn({{s, t}, weight}) ->
-		# 	if weight > 0 do
-		# 		{{s, t}, weight}
-		# 	else
-		# 		{{t, s}, -weight}
-		# 	end
-		# end)
+		_pairs(ranks, len, 0, [])
 	end
-	defp _pairs(_, n, i, scores) when n == i do
-		scores
-	end
-	defp _pairs(arr, n, i, acc) when n > i do
-		[h | t] = arr
-		a = Enum.with_index(t) |> Enum.reduce(acc, fn {x, j}, acc ->
-			inc = sign(h-x)
-			IO.puts "n=#{n}, i=#{i}, j=#{j}, index=#{range_sum(n, i)+j}"
-			if inc != 0 do
-				# index for upper triangle matrix
-				arc_update(acc, range_sum(n, i)+j, sign(x-h))
-				# for the record, index in the lower triangle matrix works as:
-				# range_sum(n-1, j)+i-1
-			else
-				acc
-			end
+	# to n-1 because the last call would be done with a single value anyway
+	defp _pairs([h | t], n, i, acc) when i < n-1 do
+		a = Enum.reduce(t, acc, fn (x), acc ->
+			[sign(x-h) | acc]
 		end)
 		_pairs(t, n, i+1, a)
 	end
-	def arc_update(graph, i, inc) do
-		{k, [h|t]} = Enum.split(graph, i)
-		k ++ [h+inc|t]
+	defp _pairs(_, n, i, scores) when i >= n-1 do
+		Enum.reverse(scores)
 	end
 
 	@doc """
@@ -97,5 +76,68 @@ defmodule Score do
 	"""
 	def sum(counts) do
 		Enum.reduce(counts, fn(count, acc) -> add(count, acc) end)
+	end
+
+	def schwartz_graph(counts) do
+		[a_count | the_rest] = counts
+		n = length(a_count) - 1
+		keys = 0..(n-1) |> Enum.flat_map(fn i ->
+			(i+1)..n |> Enum.map(fn j -> {i, j} end)
+		end)
+		values = counts |> Enum.map(fn c -> pairs(c) end) |> sum
+		graph = Enum.zip(keys, values) |> Enum.reduce(HashDict.new, fn {{i, j}, v}, g ->
+			if v < 0 do
+				HashDict.put(g, {j, i}, -v)
+			else
+				HashDict.put(g, {i, j}, v)
+			end
+		end)
+		graph
+	end
+
+	def elect(graph) do
+		# find nodes that are never a destination
+		{o, d} = Enum.reduce(graph, {HashSet.new, HashSet.new}, fn {{i, j}, v}, {o, d} ->
+			{HashSet.put(o, i), HashSet.put(d, j)}
+		end)
+		diff = HashSet.difference(o, d)
+		if HashSet.size(diff) > 0 do
+			diff
+		else
+			elect(reduce_graph(graph))
+		end
+	end
+	def reduce_graph(graph) do
+		{kmin, vmin} = Enum.reduce(graph, fn {{i, j}, v}, {{imin, jmin}, vmin} ->
+			if v < vmin do
+				{{i, j}, v}
+			else
+				{{imin, jmin}, vmin}
+			end
+		end)
+		HashDict.delete(graph, kmin)
+	end
+
+	def clone(l, n) do
+		Enum.map(0..(n-1), fn x -> l end)
+	end
+	def wikipedia() do
+		#   01234
+		# 5 ACBED
+		# 5 ADECB
+		# 8 BEDAC
+		# 3 CABED
+		# 7 CAEBD
+		# 2 CBADE
+		# 7 DCEBA
+		# 8 EBADC 
+		clone([0, 2, 1, 4, 3], 5)
+		++ clone([0, 4, 3, 1, 2], 5)
+		++ clone([3, 0, 4, 2, 1], 8)
+		++ clone([1, 2, 0, 4, 3], 3)
+		++ clone([1, 3, 0, 4, 2], 7)
+		++ clone([2, 1, 0, 3, 4], 2)
+		++ clone([4, 3, 1, 0, 2], 7)
+		++ clone([2, 1, 4, 3, 0], 8) |> schwartz_graph |> elect
 	end
 end
