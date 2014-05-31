@@ -1,7 +1,7 @@
 defmodule Score do
 	@moduledoc """
 	Utilities to implement the Schulze voting method.
-	See for http://en.wikipedia.org/wiki/Schulze_method more.
+	See http://en.wikipedia.org/wiki/Schulze_method for more.
 	"""
 
 	@doc """
@@ -10,11 +10,6 @@ defmodule Score do
 	def sign(n) when n > 0 do 1 end
 	def sign(n) when n < 0 do -1 end
 	def sign(n) when n == 0 do 0 end
-	def range_sum(n, i) do
-		# sum(n-i..n)
-		# sum(0..n) - sum(0..n-i)
-		Float.floor(n*(n-1)/2 - (n-i)*(n-i-1)/2)
-	end
 
 	@doc """
 	Given a ballot, returns a comparison triangle matrix where every
@@ -43,7 +38,7 @@ defmodule Score do
 		a + b
 	end
 	def add(a, b) when is_list(a) and is_list(b) do
-		# When add 2 lists, add their elementss pair by pair
+		# When add 2 lists, add their elements pair by pair
 		Enum.zip(a, b) |> Enum.map(fn {a, b} -> add(a, b) end)
 	end
 
@@ -108,7 +103,7 @@ defmodule Score do
 		# 7 CAEBD
 		# 2 CBADE
 		# 7 DCEBA
-		# 8 EBADC 
+		# 8 EBADC
 		clone([0, 2, 1, 4, 3], 5)
 		++ clone([0, 4, 3, 1, 2], 5)
 		++ clone([3, 0, 4, 2, 1], 8)
