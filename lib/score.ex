@@ -90,27 +90,4 @@ defmodule Score do
 		end)
 		HashDict.delete(graph, kmin)
 	end
-
-	def clone(l, n) do
-		Enum.map(0..(n-1), fn _ -> l end)
-	end
-	def wikipedia() do
-		#   01234
-		# 5 ACBED
-		# 5 ADECB
-		# 8 BEDAC
-		# 3 CABED
-		# 7 CAEBD
-		# 2 CBADE
-		# 7 DCEBA
-		# 8 EBADC
-		clone([0, 2, 1, 4, 3], 5)
-		++ clone([0, 4, 3, 1, 2], 5)
-		++ clone([3, 0, 4, 2, 1], 8)
-		++ clone([1, 2, 0, 4, 3], 3)
-		++ clone([1, 3, 0, 4, 2], 7)
-		++ clone([2, 1, 0, 3, 4], 2)
-		++ clone([4, 3, 1, 0, 2], 7)
-		++ clone([2, 1, 4, 3, 0], 8) |> graph |> schwartz_set
-	end
 end
