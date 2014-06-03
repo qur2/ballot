@@ -38,19 +38,24 @@ defmodule Score do
 		a + b
 	end
 	def add(a, b) when is_list(a) and is_list(b) do
-		# When add 2 lists, add their elements pair by pair
+		# when adding 2 lists, add their elements pair by pair
 		Enum.zip(a, b) |> Enum.map(fn {a, b} -> add(a, b) end)
 	end
 
 	@doc """
 	Sums an array of comparison matrices.
 	"""
-	def sum(cmp_mat) do
-		Enum.reduce(cmp_mat, fn(count, acc) -> add(count, acc) end)
+	def sum(matrices) do
+		Enum.reduce(matrices, fn(mat, acc) -> add(mat, acc) end)
 	end
 
 	@doc """
-	Builds a graph using the provided comparison matrices.
+	Builds a graph using the provided rankings.
+	The resulting graph is a hash so that:
+	- A key is a directed graph arc {source, target}.
+	- A value if the graph arc weight (>0).
+	In case of negative score, the arc is reversed and get the absolute value
+	of the score.
 	"""
 	def graph(ballots) do
 		n = length(Enum.at(ballots, 0)) - 1
@@ -58,7 +63,7 @@ defmodule Score do
 			(i+1)..n |> Enum.map(fn j -> {i, j} end)
 		end)
 		values = ballots |> Enum.map(fn b -> pairs(b) end) |> sum
-		#Build the graph from keys and values + reverse negative arcs
+		# build the graph from keys and values + reverse negative arcs
 		Enum.zip(keys, values) |> Enum.reduce(HashDict.new, fn {{i, j}, v}, g ->
 			if v < 0 do
 				HashDict.put(g, {j, i}, -v)
@@ -68,6 +73,13 @@ defmodule Score do
 		end)
 	end
 
+	@doc """
+	Finds the Schwartz set in an oriented graph.
+	It tries to isolate all the nodes that are never a destination (because
+	they lost no duel).
+	If there are no such nodes, it reduces the graph by removing the weakest
+	candidate and recurse.
+	"""
 	def schwartz_set(graph) do
 		# find nodes that are never a destination
 		{o, d} = Enum.reduce(graph, {HashSet.new, HashSet.new}, fn {{i, j}, _}, {o, d} ->
@@ -80,6 +92,10 @@ defmodule Score do
 			schwartz_set(reduce_graph(graph))
 		end
 	end
+
+	@doc """
+	Removes the weakest link from the graph.
+	"""
 	def reduce_graph(graph) do
 		{kmin, _} = Enum.reduce(graph, fn {{i, j}, v}, {{imin, jmin}, vmin} ->
 			if v < vmin do
